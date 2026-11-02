@@ -1,6 +1,5 @@
 /* ==========================================================
    Carta para Lucy — comportamiento
-   Edita solo el bloque CONFIG para personalizar.
    ========================================================== */
 
 const CONFIG = {
@@ -218,7 +217,7 @@ function abrirSobre() {
     portada.classList.add("sale");
     setTimeout(() => {
       portada.hidden = true;
-      pelicula.hidden = false; // Muestra la animación en lugar de la carta
+      pelicula.hidden = false; 
       iniciarSincronizacion();
     }, 900);
   }, esperaSalida);
@@ -251,36 +250,12 @@ function iniciarSincronizacion() {
         setTimeout(() => {
           textoCine.textContent = momento.texto;
           textoCine.classList.add("visible");
-        }, 1000); // 1 segundo en negro entre cada frase
+        }, 1000); 
       }
       momentoActual++;
     }
   });
 }
-
-  // La música se inicia aquí porque el navegador exige un toque del usuario
-  reproducir();
-  if (musicaDisponible) btnMusica.hidden = false;
-
-  sobre.classList.add("abierto");
-  sobre.setAttribute("aria-label", "Carta abierta");
-  pista.classList.add("abierto-pista");
-
-  const esperaSalida = reducirMovimiento ? 100 : 2700;
-  const esperaCarta = reducirMovimiento ? 100 : 900;
-
-  setTimeout(() => {
-    portada.classList.add("sale");
-    setTimeout(() => {
-      portada.hidden = true;
-      carta.hidden = false;
-      window.scrollTo(0, 0);
-      activarRevelado();
-    }, esperaCarta);
-  }, esperaSalida);
-}
-
-sobre.addEventListener("click", abrirSobre);
 
 /* ==========================================================
    Aparición de párrafos al hacer scroll
