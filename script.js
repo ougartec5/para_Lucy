@@ -6,17 +6,8 @@
 const CONFIG = {
   // Archivo de música (ponlo en la misma carpeta que index.html)
   musica: "musica.mp3",
-  volumen: 0.6,
+  volumen: 0.6
 
-  // Mensaje cuando ella dice que sí
-  mensajeSi:
-    "Gracias por darme otra oportunidad. Voy a demostrártelo con hechos, " +
-    "todos los días, y a cuidar lo que me confías.",
-
-  // Mensaje cuando ella pide tiempo
-  mensajeTiempo:
-    "Lo entiendo y lo respeto. No tengo prisa: voy a estar aquí, " +
-    "demostrándotelo con hechos, hasta que te sientas lista."
 };
 
 /* ---------- Referencias ---------- */
@@ -28,11 +19,6 @@ const pista = $("pista");
 const carta = $("carta");
 const audio = $("musica");
 const btnMusica = $("btnMusica");
-const btnSi = $("btnSi");
-const btnTiempo = $("btnTiempo");
-const respuesta = $("respuesta");
-const celebracion = $("celebracion");
-const btnCerrar = $("btnCerrar");
 const canvas = $("petalos");
 const ctx = canvas.getContext("2d");
 
@@ -258,24 +244,3 @@ function activarRevelado() {
 
   elementos.forEach((el) => observador.observe(el));
 }
-
-/* ==========================================================
-   Respuesta de Lucy
-   ========================================================== */
-btnSi.addEventListener("click", () => {
-  $("celebracionTexto").textContent = CONFIG.mensajeSi;
-  celebracion.hidden = false;
-  btnCerrar.focus();
-  lanzarCorazones();
-  setTimeout(lanzarCorazones, 700);
-  setTimeout(lanzarCorazones, 1400);
-});
-
-btnCerrar.addEventListener("click", () => {
-  celebracion.hidden = true;
-  btnSi.focus();
-});
-
-btnTiempo.addEventListener("click", () => {
-  respuesta.textContent = CONFIG.mensajeTiempo;
-});
