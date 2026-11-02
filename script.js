@@ -7,7 +7,15 @@ const CONFIG = {
   // Archivo de música (ponlo en la misma carpeta que index.html)
   musica: "musica.mp3",
   volumen: 0.6
-
+  momentos: [
+    { tiempo: 2, texto: "A veces las palabras no alcanzan..." },
+    { tiempo: 14, texto: "Y los recuerdos pesan más de lo que imaginamos." },
+    { tiempo: 28, texto: "Pero si de algo estoy seguro..." },
+    { tiempo: 42, texto: "Es de que eres mi refugio." },
+    { tiempo: 56, texto: "Por eso, antes de que sigas escuchando..." },
+    { tiempo: 72, texto: "Tengo algo importante que decirte." },
+    { tiempo: 85, mostrarCarta: true } // Aquí aparece tu carta mientras la canción sigue sonando
+  ]
 };
 
 /* ---------- Referencias ---------- */
@@ -21,6 +29,8 @@ const audio = $("musica");
 const btnMusica = $("btnMusica");
 const canvas = $("petalos");
 const ctx = canvas.getContext("2d");
+const pelicula = $("pelicula");
+const textoCine = $("texto-cine");
 
 const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -187,13 +197,66 @@ audio.addEventListener("play", actualizarBotonMusica);
 audio.addEventListener("pause", actualizarBotonMusica);
 
 /* ==========================================================
-   Abrir el sobre
+   Abrir el sobre y Sincronización
    ========================================================== */
 let abierto = false;
 
 function abrirSobre() {
   if (abierto) return;
   abierto = true;
+
+  reproducir();
+  if (musicaDisponible) btnMusica.hidden = false;
+
+  sobre.classList.add("abierto");
+  sobre.setAttribute("aria-label", "Carta abierta");
+  pista.classList.add("abierto-pista");
+
+  const esperaSalida = reducirMovimiento ? 100 : 2700;
+
+  setTimeout(() => {
+    portada.classList.add("sale");
+    setTimeout(() => {
+      portada.hidden = true;
+      pelicula.hidden = false; // Muestra la animación en lugar de la carta
+      iniciarSincronizacion();
+    }, 900);
+  }, esperaSalida);
+}
+
+sobre.addEventListener("click", abrirSobre);
+
+function iniciarSincronizacion() {
+  let momentoActual = 0;
+  
+  audio.addEventListener("timeupdate", () => {
+    if (momentoActual >= CONFIG.momentos.length) return;
+
+    const tiempoCancion = audio.currentTime;
+    const momento = CONFIG.momentos[momentoActual];
+    
+    if (tiempoCancion >= momento.tiempo) {
+      if (momento.mostrarCarta) {
+        // Oculta la frase final y muestra tu carta original intacta
+        textoCine.classList.remove("visible");
+        setTimeout(() => {
+          pelicula.hidden = true;
+          carta.hidden = false;
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          activarRevelado();
+        }, 1500);
+      } else {
+        // Intercala las frases
+        textoCine.classList.remove("visible");
+        setTimeout(() => {
+          textoCine.textContent = momento.texto;
+          textoCine.classList.add("visible");
+        }, 1000); // 1 segundo en negro entre cada frase
+      }
+      momentoActual++;
+    }
+  });
+}
 
   // La música se inicia aquí porque el navegador exige un toque del usuario
   reproducir();
