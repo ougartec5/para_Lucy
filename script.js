@@ -6,7 +6,7 @@
 const CONFIG = {
   // Archivo de música (ponlo en la misma carpeta que index.html)
   musica: "musica.mp3",
-  volumen: 0.6
+  volumen: 0.6,
   momentos: [
     { tiempo: 2, texto: "A veces las palabras no alcanzan..." },
     { tiempo: 14, texto: "Y los recuerdos pesan más de lo que imaginamos." },
