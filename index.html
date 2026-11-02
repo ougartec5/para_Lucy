@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2a0d1c">
+  <title>Para Lucy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Pétalos que caen y corazones de celebración -->
+  <canvas id="petalos" aria-hidden="true"></canvas>
+
+  <!-- Música de fondo: el archivo se define en script.js (CONFIG.musica) -->
+  <audio id="musica" loop preload="auto"></audio>
+  <button id="btnMusica" class="musica" type="button" aria-label="Pausar música" aria-pressed="true" hidden>
+    <span class="musica-icono" aria-hidden="true">♪</span>
+  </button>
+
+  <!-- Portada: el sobre -->
+  <section id="portada" class="escena">
+    <button class="sobre" id="sobre" type="button" aria-label="Abrir la carta para Lucy">
+      <span class="sobre-fondo"></span>
+      <span class="sobre-papel" aria-hidden="true">♥</span>
+      <span class="pliegues" aria-hidden="true">
+        <span class="pliegue izq"></span>
+        <span class="pliegue der"></span>
+        <span class="pliegue abajo"></span>
+      </span>
+      <span class="sobre-tapa" aria-hidden="true"></span>
+      <span class="sello" aria-hidden="true">♥</span>
+      <span class="sobre-nombre">Lucy <span aria-hidden="true">♥</span></span>
+    </button>
+    <p class="pista" id="pista">Toca el sobre para abrirlo</p>
+  </section>
+
+  <!-- La carta -->
+  <main id="carta" class="carta-vista" hidden>
+    <article class="papel">
+      <p class="saludo revela">Lucy,</p>
+
+      <p class="parrafo revela">
+        Quería preguntarte algo, no sin antes agradecerte por ser mi refugio.
+      </p>
+
+      <p class="parrafo revela">
+        Te extraño, a pesar de que te he vuelto a ver. Sí, extraño como era antes de terminar.
+        No solo pienso en los besos, los abrazos y los momentos bonitos; pienso en todo lo que
+        podríamos aprender juntos, en las conversaciones que nos faltan y en todo lo que
+        podríamos superar juntos, pero principalmente en que puedas estar tranquila.
+      </p>
+
+      <p class="parrafo revela">
+        Sé que aún tienes dudas y que no volverá a ser como antes, y que tendré que demostrártelo
+        con el tiempo, con honestidad y con hechos. No voy a minimizar lo que sentiste.
+      </p>
+
+      <p class="parrafo revela">
+        Te prometo que no volverá a pasar, y no solo eso, sino también honrarte, cuidar tus
+        vulnerabilidades y la confianza que pondrías en mí.
+      </p>
+
+      <p class="parrafo revela">
+        Y construir una relación en la que ambos nos sintamos seguros. Quiero una vida contigo y
+        sé que no será fácil, pero quiero hacerlo posible contigo, y que nuestra relación sea de
+        bien para Natán, Luciano y los que nos rodean; que sea de ejemplo.
+      </p>
+
+      <section class="pregunta revela" id="pregunta" aria-labelledby="titulo-pregunta">
+        <p class="destinataria">Lucy Sotomayor Pandal</p>
+        <h1 id="titulo-pregunta">¿Quieres ser mi novia?</h1>
+
+        <div class="botones">
+          <button type="button" class="btn btn-si" id="btnSi">Sí, quiero</button>
+          <button type="button" class="btn btn-tiempo" id="btnTiempo">Necesito tiempo</button>
+        </div>
+
+        <p class="respuesta" id="respuesta" role="status" aria-live="polite"></p>
+      </section>
+    </article>
+  </main>
+
+  <!-- Pantalla cuando dice que sí -->
+  <section class="celebracion" id="celebracion" aria-live="polite" hidden>
+    <div class="celebracion-contenido">
+      <p class="celebracion-corazon" aria-hidden="true">♥</p>
+      <h2 id="celebracionTitulo">Gracias, Lucy.</h2>
+      <p id="celebracionTexto"></p>
+      <button type="button" class="btn btn-tiempo" id="btnCerrar">Volver a la carta</button>
+    </div>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
