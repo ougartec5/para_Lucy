@@ -15,6 +15,9 @@
   <!-- Pétalos que caen y corazones de celebración -->
   <canvas id="petalos" aria-hidden="true"></canvas>
 
+  <!-- Resplandor que late detrás de la carta -->
+  <div class="latido-fondo" aria-hidden="true"></div>
+
   <!-- Música de fondo: el archivo se define en script.js (CONFIG.musica) -->
   <audio id="musica" loop preload="auto"></audio>
   <button id="btnMusica" class="musica" type="button" aria-label="Pausar música" aria-pressed="true" hidden>
@@ -73,30 +76,21 @@
       <section class="pregunta revela" id="pregunta" aria-labelledby="titulo-pregunta">
         <p class="destinataria">Lucy Sotomayor Pandal</p>
         <h1 id="titulo-pregunta">¿Quieres ser mi novia?</h1>
-        <div class="botones">
-          <button class="btn btn-si" id="btnSi" type="button">Sí, quiero</button>
-          <button class="btn btn-tiempo" id="btnTiempo" type="button">Necesito tiempo</button>
-        </div>
-        <p class="respuesta" id="respuesta" aria-live="polite"></p>
       </section>
     </article>
+
+    <p class="desliza revela">Sigue bajando, aún falta algo por decirte</p>
+
+    <!-- Animación que acompaña a la canción -->
+    <section class="promesas" id="promesas" aria-label="Lo que te prometo">
+      <canvas id="cielo" aria-hidden="true"></canvas>
+      <div class="promesas-texto">
+        <h2>Prometo</h2>
+        <p class="promesas-sub">Mientras suena la canción, esto es lo que te prometo.</p>
+      </div>
+      <p class="leyenda" id="leyenda" aria-live="polite"></p>
+    </section>
   </main>
-
-  <!-- Franja animada: dos luces que se acercan durante la canción -->
-  <div class="camino" id="caminoCaja" aria-hidden="true" hidden>
-    <p class="leyenda" id="leyenda"></p>
-    <canvas id="camino"></canvas>
-  </div>
-
-  <!-- Celebración -->
-  <section class="celebracion" id="celebracion" hidden>
-    <div class="celebracion-contenido">
-      <p class="celebracion-corazon" aria-hidden="true">♥</p>
-      <h2>¡Gracias, Lucy!</h2>
-      <p>Prometo cuidarte, honrarte y demostrártelo cada día.</p>
-      <button class="btn btn-tiempo" id="btnVolver" type="button">Volver a la carta</button>
-    </div>
-  </section>
 
   <script src="script.js"></script>
 </body>

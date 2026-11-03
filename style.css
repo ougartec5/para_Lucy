@@ -50,7 +50,7 @@ button { font: inherit; color: inherit; }
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
 }
 
@@ -420,18 +420,91 @@ button { font: inherit; color: inherit; }
   .revela { filter: none; transform: none; }
 }
 
-/* ---------- Franja animada durante la canción ---------- */
-.carta-vista { padding-bottom: 10rem; }
-.camino {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 15;
-  height: 110px; pointer-events: none;
-  background: linear-gradient(to top, rgba(42,13,28,.92) 35%, transparent);
-  animation: aparece 2s ease both;
+/* ==========================================================
+   Escena "Prometo" (acompaña a la canción)
+   ========================================================== */
+.carta-vista { padding-bottom: 0; }
+
+.desliza {
+  max-width: 660px;
+  margin: 2.8rem auto 0;
+  padding: 0 1rem;
+  text-align: center;
+  font-style: italic;
+  font-size: clamp(1.25rem, 4.4vw, 1.6rem);
+  color: var(--rosa-claro);
 }
-.camino canvas { position: absolute; left: 0; bottom: 0; width: 100%; height: 70px; }
+
+.promesas {
+  position: relative;
+  min-height: max(100svh, 560px);
+  margin: 2rem -1rem 0;
+  overflow: hidden;
+}
+.promesas canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.promesas-texto {
+  position: absolute;
+  top: clamp(1.5rem, 7vh, 4rem);
+  left: 0;
+  right: 0;
+  padding: 0 1rem;
+  text-align: center;
+}
+.promesas h2 {
+  margin: 0;
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(2.8rem, 11vw, 4.4rem);
+  color: var(--crema);
+}
+.promesas-sub {
+  margin: 0.4rem 0 0;
+  font-style: italic;
+  font-size: clamp(1.1rem, 3.8vw, 1.35rem);
+  color: var(--rosa-claro);
+}
 .leyenda {
-  position: absolute; left: 0; right: 0; bottom: 64px; margin: 0; padding: 0 1rem;
-  text-align: center; font-style: italic; font-size: clamp(1.1rem, 4vw, 1.4rem);
-  color: var(--rosa-claro); opacity: 0; transition: opacity .6s ease;
+  position: absolute;
+  left: 50%;
+  bottom: clamp(2rem, 9vh, 5rem);
+  transform: translateX(-50%);
+  width: min(90vw, 560px);
+  margin: 0;
+  text-align: center;
+  font-family: var(--fuente-manuscrita);
+  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  line-height: 1.25;
+  color: var(--crema);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
+  transition: opacity 0.9s ease;
 }
-.leyenda.v { opacity: 1; }
+.leyenda.cambia { opacity: 0; }
+
+/* ---------- Resplandor que late (detrás de la carta) ---------- */
+.latido-fondo {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: min(120vmin, 900px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(214, 64, 95, 0.4) 0%, rgba(140, 35, 71, 0.2) 40%, transparent 68%);
+  transition: opacity 3s ease;
+  animation: latido-fondo 2s ease-in-out infinite;
+}
+.latido-fondo.activo { opacity: 1; }
+
+@keyframes latido-fondo {
+  0%, 56%, 100% { transform: translate(-50%, -50%) scale(1); }
+  14% { transform: translate(-50%, -50%) scale(1.1); }
+  28% { transform: translate(-50%, -50%) scale(1); }
+  42% { transform: translate(-50%, -50%) scale(1.07); }
+}

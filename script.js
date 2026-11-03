@@ -6,8 +6,10 @@
 const CONFIG = {
   // Archivo de música (ponlo en la misma carpeta que index.html)
   musica: "musica.mp3",
-  volumen: 0.6
+  volumen: 0.6,
 
+  // Si la música no carga, la animación "Prometo" dura este tiempo (segundos)
+  duracionRespaldo: 360
 };
 
 /* ---------- Referencias ---------- */
@@ -113,6 +115,50 @@ class CorazonFiesta {
   }
 }
 
+class Luz {
+  constructor(inicial) { this.reiniciar(inicial); }
+  reiniciar(inicial) {
+    this.x = Math.random() * ancho;
+    this.y = inicial ? Math.random() * alto : alto + 20;
+    this.r = 1.5 + Math.random() * 2.5;
+    this.vy = 0.25 + Math.random() * 0.55;
+    this.fase = Math.random() * Math.PI * 2;
+    this.corazon = Math.random() < 0.3;
+  }
+  actualizar(t) {
+    this.y -= this.vy;
+    this.x += Math.sin(t / 1400 + this.fase) * 0.35;
+    if (this.y < -20) this.reiniciar(false);
+  }
+  dibujar(t) {
+    ctx.save();
+    ctx.globalAlpha = 0.35 + 0.3 * Math.sin(t / 700 + this.fase);
+    ctx.shadowColor = "#f4d58d";
+    ctx.shadowBlur = 12;
+    if (this.corazon) {
+      ctx.fillStyle = "#f6a7bb";
+      ctx.font = this.r * 6 + "px serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("♥", this.x, this.y);
+    } else {
+      ctx.fillStyle = "#f4d58d";
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+let luces = [];
+function crearLuces() {
+  if (reducirMovimiento) return;
+  const n = Math.round(Math.min(Math.max(ancho / 40, 12), 30));
+  luces = Array.from({ length: n }, () => new Luz(true));
+  iniciarAnimacion();
+}
+
 let petalos = [];
 let fiesta = [];
 let animando = false;
@@ -125,9 +171,10 @@ function crearPetalos() {
 function bucle(t) {
   ctx.clearRect(0, 0, ancho, alto);
   petalos.forEach((p) => { p.actualizar(t); p.dibujar(); });
+  luces.forEach((l) => { l.actualizar(t); l.dibujar(t); });
   fiesta = fiesta.filter((c) => c.vida > 0 && c.y < alto + 60);
   fiesta.forEach((c) => { c.actualizar(); c.dibujar(); });
-  if (petalos.length || fiesta.length) {
+  if (petalos.length || fiesta.length || luces.length) {
     requestAnimationFrame(bucle);
   } else {
     animando = false;
@@ -190,10 +237,12 @@ audio.addEventListener("pause", actualizarBotonMusica);
    Abrir el sobre
    ========================================================== */
 let abierto = false;
+let inicioCarta = performance.now();
 
 function abrirSobre() {
   if (abierto) return;
   abierto = true;
+  inicioCarta = performance.now();
 
   // La música se inicia aquí porque el navegador exige un toque del usuario
   reproducir();
@@ -211,9 +260,10 @@ function abrirSobre() {
     setTimeout(() => {
       portada.hidden = true;
       carta.hidden = false;
+      document.querySelector(".latido-fondo").classList.add("activo");
+      crearLuces();
       window.scrollTo(0, 0);
       activarRevelado();
-      iniciarCamino();
     }, esperaCarta);
   }, esperaSalida);
 }
@@ -247,115 +297,265 @@ function activarRevelado() {
 }
 
 /* ==========================================================
-   Franja "Dos caminos": dura lo mismo que la canción.
-   Dos luces parten de lados opuestos, se acercan al ritmo de
-   la música y se funden en un corazón al final.
+   Escena "Prometo": un corazón de estrellas que se dibuja
+   al ritmo de la canción. Cada estrella es una promesa de
+   la carta; al terminar la canción, el corazón queda completo.
    ========================================================== */
-const LEYENDAS = [
-  [0,    "Cada uno por su lado…"],
-  [0.18, "Dos caminos que se buscan"],
-  [0.42, "Con honestidad y con hechos"],
-  [0.68, "Paso a paso, con confianza"],
-  [0.90, "Y ahora, juntos ♥"]
+const PROMESAS = [
+  "Honestidad",
+  "Hechos, no solo palabras",
+  "Demostrártelo con el tiempo",
+  "Honrarte",
+  "Cuidar tus vulnerabilidades",
+  "Merecer tu confianza",
+  "Una relación donde ambos nos sintamos seguros",
+  "Ser de bien para Natán, Luciano y los que nos rodean"
 ];
+const FINAL = "Una vida contigo.";
 
-const caminoCaja = $("caminoCaja");
-const cv = $("camino");
-const cx = cv.getContext("2d");
+const cielo = $("cielo");
+const cc = cielo.getContext("2d");
 const leyenda = $("leyenda");
-let cw = 0, ch = 0, prog = 0, inicioCamino = 0, idxLey = -1, motas = [];
 
-function ajustarCamino() {
-  cw = cv.clientWidth; ch = cv.clientHeight;
-  cv.width = cw * dpr; cv.height = ch * dpr;
-  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+let cw = 0;
+let ch = 0;
+let estrellasFondo = [];
+let fugaces = [];
+let proximaFugaz = 0;
+let escenaVisible = false;
+let escenaCorriendo = false;
+let primerCuadro = true;
+let progresoMax = 0;
+let textoLeyenda = "";
+const encendidaEn = new Array(PROMESAS.length).fill(null);
+
+function ajustarCielo() {
+  const d = Math.min(window.devicePixelRatio || 1, 2);
+  cw = cielo.clientWidth;
+  ch = cielo.clientHeight;
+  cielo.width = cw * d;
+  cielo.height = ch * d;
+  cc.setTransform(d, 0, 0, d, 0, 0);
+  const n = Math.round(Math.min(Math.max((cw * ch) / 9000, 60), 160));
+  estrellasFondo = Array.from({ length: n }, () => ({
+    x: Math.random() * cw,
+    y: Math.random() * ch,
+    r: Math.random() * 1.3 + 0.3,
+    fase: Math.random() * 6.28,
+    vel: 0.6 + Math.random() * 1.4
+  }));
 }
-window.addEventListener("resize", () => { if (!caminoCaja.hidden) ajustarCamino(); });
 
-function iniciarCamino() {
-  caminoCaja.hidden = false;
-  ajustarCamino();
-  inicioCamino = performance.now();
-  requestAnimationFrame(dibujarCamino);
+if ("ResizeObserver" in window) {
+  new ResizeObserver(ajustarCielo).observe(cielo);
+} else {
+  window.addEventListener("resize", ajustarCielo);
 }
 
-function dibujarCamino(t) {
-  const dur = audio.duration;
-  const objetivo = (dur && isFinite(dur) && !audio.error)
-    ? audio.currentTime / dur
-    : Math.min((t - inicioCamino) / 360000, 1);
-  prog += (objetivo - prog) * 0.05;
-
-  const m = Math.min(Math.max((prog - 0.9) / 0.1, 0), 1);   // fusión final
-  const mid = ch * 0.55;
-  const xL = cw * 0.08 + (cw * 0.5 - 12 - cw * 0.08) * prog + 12 * m;
-  const xR = cw * 0.92 - (cw * 0.92 - cw * 0.5 - 12) * prog - 12 * m;
-  const yL = mid + Math.sin(t / 650) * 7 * (1 - prog);
-  const yR = mid + Math.sin(t / 650 + 2.4) * 7 * (1 - prog);
-
-  cx.clearRect(0, 0, cw, ch);
-
-  // hilo de luz entre ambos
-  const g = cx.createLinearGradient(xL, 0, xR, 0);
-  g.addColorStop(0, "#e59ab0"); g.addColorStop(1, "#e9c98f");
-  cx.globalAlpha = (0.2 + 0.5 * prog) * (1 - m);
-  cx.strokeStyle = g; cx.lineWidth = 2;
-  cx.beginPath(); cx.moveTo(xL, yL);
-  cx.quadraticCurveTo((xL + xR) / 2, mid + 14 * (1 - prog), xR, yR);
-  cx.stroke();
-
-  // estela de motas
-  [[xL, yL, "#e59ab0"], [xR, yR, "#e9c98f"]].forEach(([x, y, c]) => {
-    if (m < 1 && Math.random() < 0.5)
-      motas.push({ x, y, vx: (Math.random() - .5) * .6, vy: -Math.random() * .6, v: 1, c });
-  });
-  motas = motas.filter(p => p.v > 0);
-  motas.forEach(p => {
-    p.x += p.vx; p.y += p.vy; p.v -= 0.02;
-    cx.globalAlpha = p.v * 0.7; cx.fillStyle = p.c;
-    cx.beginPath(); cx.arc(p.x, p.y, 2, 0, 6.3); cx.fill();
-  });
-
-  // las dos luces
-  [[xL, yL, "#f6cfd9", "#e59ab0"], [xR, yR, "#fff1d0", "#e9c98f"]].forEach(([x, y, c1, c2]) => {
-    const r = 12 + 5 * Math.sin(t / 400);
-    const rg = cx.createRadialGradient(x, y, 0, x, y, r);
-    rg.addColorStop(0, c1); rg.addColorStop(0.35, c2); rg.addColorStop(1, "rgba(229,154,176,0)");
-    cx.globalAlpha = 1 - m; cx.fillStyle = rg;
-    cx.beginPath(); cx.arc(x, y, r, 0, 6.3); cx.fill();
-  });
-
-  // corazón final
-  if (m > 0) {
-    cx.globalAlpha = m; cx.fillStyle = "#f1b6c6";
-    cx.shadowColor = "#e59ab0"; cx.shadowBlur = 18;
-    cx.font = (26 + 8 * m + 4 * Math.sin(t / 250)) + "px serif";
-    cx.textAlign = "center"; cx.textBaseline = "middle";
-    cx.fillText("♥", cw / 2, mid);
-    cx.shadowBlur = 0;
+// Avance de la animación (0 a 1) según lo que lleva sonando la canción
+function progresoCancion() {
+  let f;
+  if (musicaDisponible && isFinite(audio.duration) && audio.duration > 0) {
+    f = audio.currentTime / audio.duration;
+  } else if (!musicaDisponible) {
+    f = (performance.now() - inicioCarta) / 1000 / CONFIG.duracionRespaldo;
+  } else {
+    f = progresoMax;
   }
-  cx.globalAlpha = 1;
-
-  // leyenda según el avance de la canción
-  let idx = 0;
-  LEYENDAS.forEach(([umbral], i) => { if (prog >= umbral) idx = i; });
-  if (idx !== idxLey) {
-    idxLey = idx;
-    leyenda.classList.remove("v");
-    setTimeout(() => { leyenda.textContent = LEYENDAS[idx][1]; leyenda.classList.add("v"); }, 600);
-  }
-
-  requestAnimationFrame(dibujarCamino);
+  progresoMax = Math.max(progresoMax, Math.min(f, 1));
+  return progresoMax;
 }
 
-/* ==========================================================
-   La respuesta
-   ========================================================== */
-$("btnSi").addEventListener("click", () => {
-  lanzarCorazones();
-  setTimeout(() => { $("celebracion").hidden = false; }, 900);
-});
-$("btnTiempo").addEventListener("click", () => {
-  $("respuesta").textContent = "Lo entiendo. Tómate el tiempo que necesites; aquí estaré.";
-});
-$("btnVolver").addEventListener("click", () => { $("celebracion").hidden = true; });
+function puntoCorazon(theta, escala, ox, oy) {
+  const x = 16 * Math.pow(Math.sin(theta), 3);
+  const y = 13 * Math.cos(theta) - 5 * Math.cos(2 * theta) -
+            2 * Math.cos(3 * theta) - Math.cos(4 * theta);
+  return [ox + x * escala, oy - y * escala];
+}
+
+function ponerLeyenda(texto) {
+  if (texto === textoLeyenda) return;
+  textoLeyenda = texto;
+  leyenda.classList.add("cambia");
+  setTimeout(() => {
+    leyenda.textContent = texto;
+    leyenda.classList.remove("cambia");
+  }, reducirMovimiento ? 0 : 700);
+}
+
+function dibujarCielo(ahora) {
+  if (!cw || !ch) ajustarCielo();
+  const f = progresoCancion();
+  const c = Math.min(f / 0.9, 1);       // el corazón se completa al 90 % de la canción
+  const completo = c >= 1;
+
+  cc.clearRect(0, 0, cw, ch);
+
+  // Estrellas de fondo
+  cc.fillStyle = "#fbf4e9";
+  for (const e of estrellasFondo) {
+    cc.globalAlpha = reducirMovimiento ? 0.5 : 0.35 + 0.35 * Math.sin((ahora / 1000) * e.vel + e.fase);
+    cc.beginPath();
+    cc.arc(e.x, e.y, e.r, 0, 6.283);
+    cc.fill();
+  }
+  cc.globalAlpha = 1;
+
+  // Estrellas fugaces
+  if (!reducirMovimiento) {
+    if (ahora > proximaFugaz) {
+      fugaces.push({
+        x: cw * 0.25 + Math.random() * cw * 0.75,
+        y: Math.random() * ch * 0.35,
+        vx: -(6 + Math.random() * 4),
+        vy: 3 + Math.random() * 2,
+        vida: 1
+      });
+      proximaFugaz = ahora + 4000 + Math.random() * 6000;
+    }
+    fugaces = fugaces.filter((s) => s.vida > 0);
+    for (const s of fugaces) {
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vida -= 0.018;
+      cc.strokeStyle = "rgba(251, 244, 233," + Math.max(s.vida, 0) * 0.8 + ")";
+      cc.lineWidth = 1.6;
+      cc.beginPath();
+      cc.moveTo(s.x, s.y);
+      cc.lineTo(s.x - s.vx * 7, s.y - s.vy * 7);
+      cc.stroke();
+    }
+  }
+
+  // Geometría del corazón
+  const latido = completo && !reducirMovimiento
+    ? 1 + 0.04 * Math.pow(Math.abs(Math.sin(ahora / 700)), 14)
+    : 1;
+  const escala = Math.min((cw * 0.62) / 32, (ch * 0.36) / 29) * latido;
+  const ox = cw / 2;
+  const oy = ch * 0.47 - 2.5 * escala;
+
+  const N = 320;
+  const puntos = [];
+  for (let i = 0; i <= N; i++) {
+    puntos.push(puntoCorazon(Math.PI + (i / N) * 2 * Math.PI, escala, ox, oy));
+  }
+
+  // Guía tenue del corazón completo
+  cc.setLineDash([4, 9]);
+  cc.strokeStyle = "rgba(246, 207, 217, 0.13)";
+  cc.lineWidth = 1.5;
+  cc.beginPath();
+  puntos.forEach((p, i) => (i ? cc.lineTo(p[0], p[1]) : cc.moveTo(p[0], p[1])));
+  cc.stroke();
+  cc.setLineDash([]);
+
+  // Relleno suave cuando el corazón está completo
+  if (completo) {
+    cc.fillStyle = "rgba(229, 154, 176," + (0.16 + 0.06 * Math.sin(ahora / 500)) + ")";
+    cc.beginPath();
+    puntos.forEach((p, i) => (i ? cc.lineTo(p[0], p[1]) : cc.moveTo(p[0], p[1])));
+    cc.closePath();
+    cc.fill();
+  }
+
+  // Trazo que avanza con la canción
+  const hasta = Math.floor(c * N);
+  if (hasta > 0) {
+    cc.shadowColor = "#e59ab0";
+    cc.shadowBlur = 14;
+    cc.strokeStyle = "#f6cfd9";
+    cc.lineWidth = 2.6;
+    cc.lineCap = "round";
+    cc.beginPath();
+    for (let i = 0; i <= hasta; i++) {
+      i ? cc.lineTo(puntos[i][0], puntos[i][1]) : cc.moveTo(puntos[i][0], puntos[i][1]);
+    }
+    cc.stroke();
+    cc.shadowBlur = 0;
+  }
+
+  // Punta brillante del trazo
+  if (!completo) {
+    const p = puntos[Math.min(hasta, N)];
+    const r = 5 + (reducirMovimiento ? 0 : 2 * Math.sin(ahora / 180));
+    const g = cc.createRadialGradient(p[0], p[1], 0, p[0], p[1], r * 3);
+    g.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+    g.addColorStop(1, "rgba(246, 207, 217, 0)");
+    cc.fillStyle = g;
+    cc.beginPath();
+    cc.arc(p[0], p[1], r * 3, 0, 6.283);
+    cc.fill();
+  }
+
+  // Estrellas de las promesas
+  const total = PROMESAS.length;
+  for (let k = 0; k < total; k++) {
+    const p = puntoCorazon(Math.PI + (k / total) * 2 * Math.PI, escala, ox, oy);
+    const encendida = c >= k / total;
+
+    if (encendida && encendidaEn[k] === null) encendidaEn[k] = primerCuadro ? -1e9 : ahora;
+    if (!encendida) encendidaEn[k] = null;
+
+    if (!encendida) {
+      cc.fillStyle = "rgba(251, 244, 233, 0.3)";
+      cc.beginPath();
+      cc.arc(p[0], p[1], 3, 0, 6.283);
+      cc.fill();
+      continue;
+    }
+
+    const pulso = reducirMovimiento ? 0 : Math.max(0, 1 - (ahora - encendidaEn[k]) / 1400);
+    const halo = 16 + 22 * pulso;
+    const g = cc.createRadialGradient(p[0], p[1], 0, p[0], p[1], halo);
+    g.addColorStop(0, "rgba(255, 244, 230, 0.95)");
+    g.addColorStop(0.35, "rgba(233, 201, 143, 0.45)");
+    g.addColorStop(1, "rgba(233, 201, 143, 0)");
+    cc.fillStyle = g;
+    cc.beginPath();
+    cc.arc(p[0], p[1], halo, 0, 6.283);
+    cc.fill();
+
+    cc.fillStyle = "#fff8ea";
+    cc.beginPath();
+    cc.arc(p[0], p[1], 4.5, 0, 6.283);
+    cc.fill();
+
+    const brazo = 9 + 6 * pulso;
+    cc.strokeStyle = "rgba(255, 248, 234, 0.8)";
+    cc.lineWidth = 1.2;
+    cc.beginPath();
+    cc.moveTo(p[0] - brazo, p[1]);
+    cc.lineTo(p[0] + brazo, p[1]);
+    cc.moveTo(p[0], p[1] - brazo);
+    cc.lineTo(p[0], p[1] + brazo);
+    cc.stroke();
+  }
+
+  // Frase que acompaña a cada promesa
+  ponerLeyenda(completo ? FINAL : PROMESAS[Math.min(Math.floor(c * total), total - 1)]);
+
+  primerCuadro = false;
+}
+
+function bucleCielo(ahora) {
+  if (!escenaVisible) {
+    escenaCorriendo = false;
+    return;
+  }
+  dibujarCielo(ahora);
+  requestAnimationFrame(bucleCielo);
+}
+
+// Solo se anima cuando la escena está en pantalla (ahorra batería)
+new IntersectionObserver(
+  (entradas) => {
+    escenaVisible = entradas[0].isIntersecting;
+    if (escenaVisible && !escenaCorriendo) {
+      escenaCorriendo = true;
+      primerCuadro = true;
+      requestAnimationFrame(bucleCielo);
+    }
+  },
+  { threshold: 0.05 }
+).observe($("promesas"));
