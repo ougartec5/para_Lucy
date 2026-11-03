@@ -459,9 +459,9 @@ function persona(x, g, u, o) {
     c.fillStyle = labio; c.beginPath(); c.arc(1.0 * u, my - 0.1 * u, 0.8 * u, 0, 3.14); c.fill();
   } else if (o.boca === 1) {
     c.fillStyle = labio; c.beginPath();
-    c.ellipse(1.0 * u, my + 0.1 * u, 0.4 * u, (0.12 + 0.28 * (o.abre || 0)) * u, 0, 0, 6.283); c.fill();
+    c.ellipse(1.0 * u, my + 0.1 * u, 0.32 * u, (0.08 + 0.2 * (o.abre || 0)) * u, 0, 0, 6.283); c.fill();
   } else {
-    c.strokeStyle = labio; c.lineWidth = (o.chica ? 0.45 : 0.28) * u;
+    c.strokeStyle = labio; c.lineWidth = (o.chica ? 0.28 : 0.28) * u;
     c.beginPath(); c.arc(1.0 * u, my - 0.2 * u, 0.55 * u, 0.2, 2.94); c.stroke();
   }
   c.restore();
