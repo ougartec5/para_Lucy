@@ -1,20 +1,13 @@
 /* ==========================================================
    Carta para Lucy — comportamiento
+   Edita solo el bloque CONFIG para personalizar.
    ========================================================== */
 
 const CONFIG = {
   // Archivo de música (ponlo en la misma carpeta que index.html)
   musica: "musica.mp3",
-  volumen: 0.6,
-  momentos: [
-    { tiempo: 2, texto: "A veces las palabras no alcanzan..." },
-    { tiempo: 14, texto: "Y los recuerdos pesan más de lo que imaginamos." },
-    { tiempo: 28, texto: "Pero si de algo estoy seguro..." },
-    { tiempo: 42, texto: "Es de que eres mi refugio." },
-    { tiempo: 56, texto: "Por eso, antes de que sigas escuchando..." },
-    { tiempo: 72, texto: "Tengo algo importante que decirte." },
-    { tiempo: 85, mostrarCarta: true } // Aquí aparece tu carta mientras la canción sigue sonando
-  ]
+  volumen: 0.6
+
 };
 
 /* ---------- Referencias ---------- */
@@ -28,8 +21,6 @@ const audio = $("musica");
 const btnMusica = $("btnMusica");
 const canvas = $("petalos");
 const ctx = canvas.getContext("2d");
-const pelicula = $("pelicula");
-const textoCine = $("texto-cine");
 
 const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -196,7 +187,7 @@ audio.addEventListener("play", actualizarBotonMusica);
 audio.addEventListener("pause", actualizarBotonMusica);
 
 /* ==========================================================
-   Abrir el sobre y Sincronización
+   Abrir el sobre
    ========================================================== */
 let abierto = false;
 
@@ -204,6 +195,7 @@ function abrirSobre() {
   if (abierto) return;
   abierto = true;
 
+  // La música se inicia aquí porque el navegador exige un toque del usuario
   reproducir();
   if (musicaDisponible) btnMusica.hidden = false;
 
@@ -212,50 +204,21 @@ function abrirSobre() {
   pista.classList.add("abierto-pista");
 
   const esperaSalida = reducirMovimiento ? 100 : 2700;
+  const esperaCarta = reducirMovimiento ? 100 : 900;
 
   setTimeout(() => {
     portada.classList.add("sale");
     setTimeout(() => {
       portada.hidden = true;
-      pelicula.hidden = false; 
-      iniciarSincronizacion();
-    }, 900);
+      carta.hidden = false;
+      window.scrollTo(0, 0);
+      activarRevelado();
+      iniciarCamino();
+    }, esperaCarta);
   }, esperaSalida);
 }
 
 sobre.addEventListener("click", abrirSobre);
-
-function iniciarSincronizacion() {
-  let momentoActual = 0;
-  
-  audio.addEventListener("timeupdate", () => {
-    if (momentoActual >= CONFIG.momentos.length) return;
-
-    const tiempoCancion = audio.currentTime;
-    const momento = CONFIG.momentos[momentoActual];
-    
-    if (tiempoCancion >= momento.tiempo) {
-      if (momento.mostrarCarta) {
-        // Oculta la frase final y muestra tu carta original intacta
-        textoCine.classList.remove("visible");
-        setTimeout(() => {
-          pelicula.hidden = true;
-          carta.hidden = false;
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          activarRevelado();
-        }, 1500);
-      } else {
-        // Intercala las frases
-        textoCine.classList.remove("visible");
-        setTimeout(() => {
-          textoCine.textContent = momento.texto;
-          textoCine.classList.add("visible");
-        }, 1000); 
-      }
-      momentoActual++;
-    }
-  });
-}
 
 /* ==========================================================
    Aparición de párrafos al hacer scroll
@@ -282,3 +245,117 @@ function activarRevelado() {
 
   elementos.forEach((el) => observador.observe(el));
 }
+
+/* ==========================================================
+   Franja "Dos caminos": dura lo mismo que la canción.
+   Dos luces parten de lados opuestos, se acercan al ritmo de
+   la música y se funden en un corazón al final.
+   ========================================================== */
+const LEYENDAS = [
+  [0,    "Cada uno por su lado…"],
+  [0.18, "Dos caminos que se buscan"],
+  [0.42, "Con honestidad y con hechos"],
+  [0.68, "Paso a paso, con confianza"],
+  [0.90, "Y ahora, juntos ♥"]
+];
+
+const caminoCaja = $("caminoCaja");
+const cv = $("camino");
+const cx = cv.getContext("2d");
+const leyenda = $("leyenda");
+let cw = 0, ch = 0, prog = 0, inicioCamino = 0, idxLey = -1, motas = [];
+
+function ajustarCamino() {
+  cw = cv.clientWidth; ch = cv.clientHeight;
+  cv.width = cw * dpr; cv.height = ch * dpr;
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener("resize", () => { if (!caminoCaja.hidden) ajustarCamino(); });
+
+function iniciarCamino() {
+  caminoCaja.hidden = false;
+  ajustarCamino();
+  inicioCamino = performance.now();
+  requestAnimationFrame(dibujarCamino);
+}
+
+function dibujarCamino(t) {
+  const dur = audio.duration;
+  const objetivo = (dur && isFinite(dur) && !audio.error)
+    ? audio.currentTime / dur
+    : Math.min((t - inicioCamino) / 360000, 1);
+  prog += (objetivo - prog) * 0.05;
+
+  const m = Math.min(Math.max((prog - 0.9) / 0.1, 0), 1);   // fusión final
+  const mid = ch * 0.55;
+  const xL = cw * 0.08 + (cw * 0.5 - 12 - cw * 0.08) * prog + 12 * m;
+  const xR = cw * 0.92 - (cw * 0.92 - cw * 0.5 - 12) * prog - 12 * m;
+  const yL = mid + Math.sin(t / 650) * 7 * (1 - prog);
+  const yR = mid + Math.sin(t / 650 + 2.4) * 7 * (1 - prog);
+
+  cx.clearRect(0, 0, cw, ch);
+
+  // hilo de luz entre ambos
+  const g = cx.createLinearGradient(xL, 0, xR, 0);
+  g.addColorStop(0, "#e59ab0"); g.addColorStop(1, "#e9c98f");
+  cx.globalAlpha = (0.2 + 0.5 * prog) * (1 - m);
+  cx.strokeStyle = g; cx.lineWidth = 2;
+  cx.beginPath(); cx.moveTo(xL, yL);
+  cx.quadraticCurveTo((xL + xR) / 2, mid + 14 * (1 - prog), xR, yR);
+  cx.stroke();
+
+  // estela de motas
+  [[xL, yL, "#e59ab0"], [xR, yR, "#e9c98f"]].forEach(([x, y, c]) => {
+    if (m < 1 && Math.random() < 0.5)
+      motas.push({ x, y, vx: (Math.random() - .5) * .6, vy: -Math.random() * .6, v: 1, c });
+  });
+  motas = motas.filter(p => p.v > 0);
+  motas.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.v -= 0.02;
+    cx.globalAlpha = p.v * 0.7; cx.fillStyle = p.c;
+    cx.beginPath(); cx.arc(p.x, p.y, 2, 0, 6.3); cx.fill();
+  });
+
+  // las dos luces
+  [[xL, yL, "#f6cfd9", "#e59ab0"], [xR, yR, "#fff1d0", "#e9c98f"]].forEach(([x, y, c1, c2]) => {
+    const r = 12 + 5 * Math.sin(t / 400);
+    const rg = cx.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, c1); rg.addColorStop(0.35, c2); rg.addColorStop(1, "rgba(229,154,176,0)");
+    cx.globalAlpha = 1 - m; cx.fillStyle = rg;
+    cx.beginPath(); cx.arc(x, y, r, 0, 6.3); cx.fill();
+  });
+
+  // corazón final
+  if (m > 0) {
+    cx.globalAlpha = m; cx.fillStyle = "#f1b6c6";
+    cx.shadowColor = "#e59ab0"; cx.shadowBlur = 18;
+    cx.font = (26 + 8 * m + 4 * Math.sin(t / 250)) + "px serif";
+    cx.textAlign = "center"; cx.textBaseline = "middle";
+    cx.fillText("♥", cw / 2, mid);
+    cx.shadowBlur = 0;
+  }
+  cx.globalAlpha = 1;
+
+  // leyenda según el avance de la canción
+  let idx = 0;
+  LEYENDAS.forEach(([umbral], i) => { if (prog >= umbral) idx = i; });
+  if (idx !== idxLey) {
+    idxLey = idx;
+    leyenda.classList.remove("v");
+    setTimeout(() => { leyenda.textContent = LEYENDAS[idx][1]; leyenda.classList.add("v"); }, 600);
+  }
+
+  requestAnimationFrame(dibujarCamino);
+}
+
+/* ==========================================================
+   La respuesta
+   ========================================================== */
+$("btnSi").addEventListener("click", () => {
+  lanzarCorazones();
+  setTimeout(() => { $("celebracion").hidden = false; }, 900);
+});
+$("btnTiempo").addEventListener("click", () => {
+  $("respuesta").textContent = "Lo entiendo. Tómate el tiempo que necesites; aquí estaré.";
+});
+$("btnVolver").addEventListener("click", () => { $("celebracion").hidden = true; });
