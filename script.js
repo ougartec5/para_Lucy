@@ -300,20 +300,21 @@ function activarRevelado() {
   // apareciendo de uno en uno a medida que la persona se desplaza.
   let i = 0;
   let esperando = false;
-  let yUltimo = window.scrollY;
 
+  // 0 = saludo, 1 = "Quería preguntarte…" (salen solos al abrir);
+  // desde el 2.º párrafo cada uno necesita un poco más de desplazamiento.
   function siguiente() {
     if (i >= enCarta.length || esperando) return;
+    const paso = window.innerHeight * 0.18;
     const el = enCarta[i];
-    const dentro = el.getBoundingClientRect().top < window.innerHeight * 0.62;
-    const desplazo = i < 2 || window.scrollY - yUltimo >= 50;
-    if (!dentro || !desplazo) return;
+    const enPantalla = el.getBoundingClientRect().top < window.innerHeight * 0.75;
+    const bajo = i < 2 || window.scrollY >= (i - 1) * paso;
+    if (!enPantalla || !bajo) return;
 
     esperando = true;
     el.classList.add("visible");
     i++;
-    yUltimo = window.scrollY;
-    setTimeout(() => { esperando = false; siguiente(); }, reducirMovimiento ? 0 : 1100);
+    setTimeout(() => { esperando = false; siguiente(); }, reducirMovimiento ? 0 : 1000);
   }
 
   window.addEventListener("scroll", siguiente, { passive: true });
