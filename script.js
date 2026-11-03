@@ -262,7 +262,6 @@ function abrirSobre() {
       carta.hidden = false;
       document.querySelector(".latido-fondo").classList.add("activo");
       crearLuces();
-      $("escenita").hidden = false;
       window.scrollTo(0, 0);
       activarRevelado();
     }, esperaCarta);
@@ -312,11 +311,9 @@ const PROMESAS = [
   "Una relación donde ambos nos sintamos seguros",
   "Ser de bien para Natán, Luciano y los que nos rodean"
 ];
-const FINAL = "Una vida contigo.";
 
 const cielo = $("cielo");
 const cc = cielo.getContext("2d");
-const leyenda = $("leyenda");
 
 let cw = 0;
 let ch = 0;
@@ -327,7 +324,6 @@ let escenaVisible = false;
 let escenaCorriendo = false;
 let primerCuadro = true;
 let progresoMax = 0;
-let textoLeyenda = "";
 const encendidaEn = new Array(PROMESAS.length).fill(null);
 
 function ajustarCielo() {
@@ -374,14 +370,196 @@ function puntoCorazon(theta, escala, ox, oy) {
   return [ox + x * escala, oy - y * escala];
 }
 
-function ponerLeyenda(texto) {
-  if (texto === textoLeyenda) return;
-  textoLeyenda = texto;
-  leyenda.classList.add("cambia");
-  setTimeout(() => {
-    leyenda.textContent = texto;
-    leyenda.classList.remove("cambia");
-  }, reducirMovimiento ? 0 : 700);
+/* ==========================================================
+   Pareja de caricatura dentro del corazón
+   Hablan, bailan, ríen, juegan y se abrazan según avanza la canción.
+   ========================================================== */
+const TRAMOS = [0, 0.22, 0.44, 0.66, 0.88, 1];
+
+function persona(x, g, u, o) {
+  const c = cc, piel = "#f2c9a0", pelo = "#3a2418";
+  c.save();
+  c.fillStyle = "rgba(0,0,0,0.25)";
+  c.beginPath(); c.ellipse(x, g, 2.4 * u, 0.5 * u, 0, 0, 6.283); c.fill();
+  c.translate(x, g - (o.bob || 0) * u);
+  c.rotate(o.incl || 0);
+  c.scale(o.dir, 1);
+  c.lineCap = "round";
+
+  // piernas
+  c.strokeStyle = o.chica ? piel : "#2f3b6b";
+  c.lineWidth = 0.8 * u;
+  for (const s of [-1, 1]) {
+    c.beginPath();
+    c.moveTo(s * 0.7 * u, -3.6 * u);
+    c.lineTo(s * 0.7 * u + Math.sin((o.pierna || 0) + (s > 0 ? 3.14 : 0)) * 1.1 * u, -0.2 * u);
+    c.stroke();
+  }
+
+  // cuerpo
+  c.fillStyle = o.chica ? "#e07a98" : "#4f7fd1";
+  c.beginPath();
+  if (o.chica) {
+    c.moveTo(-0.9 * u, -7.3 * u); c.lineTo(0.9 * u, -7.3 * u);
+    c.lineTo(2 * u, -3.4 * u); c.lineTo(-2 * u, -3.4 * u);
+  } else {
+    c.rect(-1.4 * u, -7.4 * u, 2.8 * u, 3.9 * u);
+  }
+  c.closePath(); c.fill();
+
+  // brazos (ángulo desde "colgando": 0 abajo, 3.14 arriba)
+  c.strokeStyle = piel;
+  c.lineWidth = 0.7 * u;
+  [[1.2, o.bD], [-1.2, o.bI]].forEach(([sx, a]) => {
+    c.beginPath();
+    c.moveTo(sx * u, -6.8 * u);
+    c.lineTo((sx + Math.sign(sx) * Math.sin(a) * 2.6) * u, (-6.8 + Math.cos(a) * 2.6) * u);
+    c.stroke();
+  });
+
+  // cabeza y pelo
+  const hy = -9.7 * u;
+  c.fillStyle = pelo;
+  if (o.chica) { c.beginPath(); c.ellipse(-0.3 * u, hy + 1.2 * u, 2.7 * u, 3.2 * u, 0, 0, 6.283); c.fill(); }
+  c.fillStyle = piel;
+  c.beginPath(); c.arc(0, hy, 2.2 * u, 0, 6.283); c.fill();
+  c.fillStyle = pelo;
+  c.beginPath(); c.arc(0, hy, 2.35 * u, 3.14, 6.283); c.fill();
+
+  // cara
+  c.fillStyle = c.strokeStyle = "#2a1a14";
+  c.lineWidth = 0.28 * u;
+  const ey = hy + 0.6 * u;
+  for (const ex of [0.5 * u, 1.5 * u]) {
+    c.beginPath();
+    if (o.boca === 2) { c.arc(ex, ey + 0.1 * u, 0.3 * u, 3.14, 6.283); c.stroke(); }
+    else { c.arc(ex, ey, 0.24 * u, 0, 6.283); c.fill(); }
+  }
+  c.fillStyle = "rgba(224,100,130,0.45)";
+  c.beginPath(); c.arc(1.9 * u, hy + 1.2 * u, 0.4 * u, 0, 6.283); c.fill();
+  const my = hy + 1.3 * u;
+  if (o.boca === 2) {
+    c.fillStyle = "#8a1630"; c.beginPath(); c.arc(1.0 * u, my - 0.1 * u, 0.8 * u, 0, 3.14); c.fill();
+  } else if (o.boca === 1) {
+    c.fillStyle = "#8a1630"; c.beginPath();
+    c.ellipse(1.0 * u, my + 0.1 * u, 0.45 * u, (0.15 + 0.4 * (o.abre || 0)) * u, 0, 0, 6.283); c.fill();
+  } else {
+    c.beginPath(); c.arc(1.0 * u, my - 0.2 * u, 0.55 * u, 0.2, 2.94); c.stroke();
+  }
+  c.restore();
+}
+
+function textoFlotante(txt, x, y, tam, color, alfa) {
+  cc.save();
+  cc.globalAlpha = Math.max(0, alfa);
+  cc.fillStyle = color;
+  cc.font = "italic 600 " + tam + "px serif";
+  cc.textAlign = "center";
+  cc.textBaseline = "middle";
+  cc.fillText(txt, x, y);
+  cc.restore();
+}
+
+function burbuja(x, y, u, txt) {
+  cc.save();
+  cc.globalAlpha *= 0.92;
+  cc.fillStyle = "#fbf4e9";
+  cc.beginPath();
+  cc.arc(x, y, 1.3 * u, 0, 6.283);
+  cc.moveTo(x - 0.5 * u, y + 1.1 * u); cc.lineTo(x, y + 2 * u); cc.lineTo(x + 0.5 * u, y + 1.1 * u);
+  cc.fill();
+  cc.restore();
+  textoFlotante(txt, x, y + 0.1 * u, 1.5 * u, "#c4476f", cc.globalAlpha);
+}
+
+function dibujarPareja(ahora, f, ox, cy, u) {
+  let i = 0;
+  while (i < 4 && f >= TRAMOS[i + 1]) i++;
+  const s = (f - TRAMOS[i]) / (TRAMOS[i + 1] - TRAMOS[i]);
+  const alfa = Math.max(0, Math.min(1, s * 40, i === 4 ? 1 : (1 - s) * 40));
+  const T = reducirMovimiento ? 0 : ahora / 1000;
+  const g = cy + 3.2 * u;
+  const A = { dir: 1, bD: 0.3, bI: 0.3, boca: 0 };
+  const B = { dir: -1, chica: true, bD: 0.3, bI: 0.3, boca: 0 };
+  let d = 3.6;
+  const pulso = Math.abs(Math.sin(T * 4));
+
+  cc.save();
+  cc.globalAlpha = alfa;
+
+  if (i === 0) {                                   // hablan
+    const aHabla = Math.sin(T * 1.4) > 0;
+    const h = aHabla ? A : B, o = aHabla ? B : A;
+    h.boca = 1; h.abre = Math.abs(Math.sin(T * 9));
+    h.bD = 1.1 + 0.5 * Math.sin(T * 6);
+    h.bob = 0.2 * h.abre;
+    o.bob = 0.25 * Math.abs(Math.sin(T * 2));
+    var simbolo = ["♥", "♪", "…", "♥"][Math.floor(T * 1.4) % 4];
+    var xh = ox + (aHabla ? -d : d) * u;
+  } else if (i === 1) {                            // bailan
+    d = 3.2;
+    for (const [o, ph] of [[A, 0], [B, 3.14]]) {
+      o.incl = Math.sin(T * 3 + ph) * 0.12;
+      o.bob = pulso * 0.6;
+      o.bD = 2.2 + Math.sin(T * 4 + ph) * 0.5;
+      o.bI = 2.2 + Math.cos(T * 4 + ph) * 0.5;
+      o.pierna = T * 8;
+    }
+  } else if (i === 2) {                            // ríen
+    for (const o of [A, B]) {
+      o.boca = 2; o.bob = Math.abs(Math.sin(T * 9)) * 0.5;
+      o.incl = Math.sin(T * 9) * 0.05;
+      o.bD = 0.7; o.bI = 0.5 + 0.2 * Math.sin(T * 9);
+    }
+  } else if (i === 3) {                            // juegan a la pelota
+    d = 5.2;
+    for (const o of [A, B]) {
+      o.bob = Math.abs(Math.sin(T * 3)) * 0.5;
+      o.bD = o.bI = 2.6 + 0.2 * Math.sin(T * 3);
+      o.pierna = T * 6;
+    }
+  } else {                                         // abrazo
+    d = 2.4;
+    A.incl = 0.06 + 0.02 * Math.sin(T * 2);
+    B.incl = -A.incl;
+    A.bD = B.bD = 1.9; A.bI = B.bI = 0.5;
+    A.bob = B.bob = 0.15 * Math.abs(Math.sin(T * 2));
+  }
+
+  const xl = ox - d * u, xr = ox + d * u;
+  persona(xl, g, u, A);
+  persona(xr, g, u, B);
+
+  if (i === 0) burbuja(xh, g - 13.7 * u, u, simbolo);
+
+  if (i === 1) {                                   // notas musicales
+    for (let n = 0; n < 3; n++) {
+      const k = (T * 0.35 + n / 3) % 1;
+      textoFlotante(n % 2 ? "♪" : "♫", ox + (n - 1) * 2.2 * u + Math.sin(T * 2 + n) * 0.6 * u,
+        cy + u - k * 8 * u, 2 * u, n % 2 ? "#e9c98f" : "#f6cfd9", Math.sin(k * 3.14) * alfa);
+    }
+  }
+  if (i === 2) {                                   // risas
+    const v = alfa * (0.55 + 0.45 * Math.sin(T * 5));
+    textoFlotante("ja!", xl, g - 13.4 * u, 1.8 * u, "#fbf4e9", v);
+    textoFlotante("jaja!", xr, g - 13.4 * u, 1.8 * u, "#fbf4e9", alfa * (0.55 + 0.45 * Math.cos(T * 5)));
+  }
+  if (i === 3) {                                   // la pelota
+    const p = (T * 0.5) % 2, q = p < 1 ? p : 2 - p;
+    const bx = xl + 2.6 * u + (xr - xl - 5.2 * u) * q;
+    const by = g - 8.6 * u - Math.sin(q * 3.14) * 1.2 * u;
+    cc.fillStyle = "#e9c98f"; cc.strokeStyle = "#c4476f"; cc.lineWidth = 0.25 * u;
+    cc.beginPath(); cc.arc(bx, by, 0.85 * u, 0, 6.283); cc.fill(); cc.stroke();
+    cc.beginPath(); cc.arc(bx, by, 0.85 * u, 0.5, 2.6); cc.stroke();
+  }
+  if (i === 4) {                                   // corazones que suben
+    for (let n = 0; n < 5; n++) {
+      const k = (T * 0.3 + n / 5) % 1;
+      textoFlotante("♥", ox + Math.sin(T + n * 2) * 2.5 * u, cy - 4 * u - k * 8 * u,
+        1.6 * u, "#f1b6c6", Math.sin(k * 3.14));
+    }
+  }
+  cc.restore();
 }
 
 function dibujarCielo(ahora) {
@@ -452,8 +630,8 @@ function dibujarCielo(ahora) {
   cc.setLineDash([]);
 
   // Relleno suave cuando el corazón está completo
-  if (completo) {
-    cc.fillStyle = "rgba(229, 154, 176," + (0.16 + 0.06 * Math.sin(ahora / 500)) + ")";
+  {
+    cc.fillStyle = completo ? "rgba(229, 154, 176," + (0.16 + 0.06 * Math.sin(ahora / 500)) + ")" : "rgba(42, 13, 28, 0.4)";
     cc.beginPath();
     puntos.forEach((p, i) => (i ? cc.lineTo(p[0], p[1]) : cc.moveTo(p[0], p[1])));
     cc.closePath();
@@ -488,6 +666,9 @@ function dibujarCielo(ahora) {
     cc.arc(p[0], p[1], r * 3, 0, 6.283);
     cc.fill();
   }
+
+  // Pareja de caricatura dentro del corazón
+  dibujarPareja(ahora, f, ox, oy + 2.5 * escala, escala);
 
   // Estrellas de las promesas
   const total = PROMESAS.length;
@@ -532,9 +713,6 @@ function dibujarCielo(ahora) {
     cc.lineTo(p[0], p[1] + brazo);
     cc.stroke();
   }
-
-  // Frase que acompaña a cada promesa
-  ponerLeyenda(completo ? FINAL : PROMESAS[Math.min(Math.floor(c * total), total - 1)]);
 
   primerCuadro = false;
 }
