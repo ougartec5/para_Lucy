@@ -274,26 +274,51 @@ sobre.addEventListener("click", abrirSobre);
    Aparición de párrafos al hacer scroll
    ========================================================== */
 function activarRevelado() {
-  const elementos = document.querySelectorAll(".revela");
+  const todos = Array.from(document.querySelectorAll(".revela"));
+  const enCarta = todos.filter((el) => el.closest(".papel"));
+  const resto = todos.filter((el) => !el.closest(".papel"));
 
+  // Fotos, aviso y pregunta: aparecen al llegar a ellos
   if (!("IntersectionObserver" in window)) {
-    elementos.forEach((el) => el.classList.add("visible"));
-    return;
+    resto.forEach((el) => el.classList.add("visible"));
+  } else {
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        entradas.forEach((entrada) => {
+          if (entrada.isIntersecting) {
+            entrada.target.classList.add("visible");
+            observador.unobserve(entrada.target);
+          }
+        });
+      },
+      { threshold: 0.25, rootMargin: "0px 0px -8% 0px" }
+    );
+    resto.forEach((el) => observador.observe(el));
   }
 
-  const observador = new IntersectionObserver(
-    (entradas) => {
-      entradas.forEach((entrada) => {
-        if (entrada.isIntersecting) {
-          entrada.target.classList.add("visible");
-          observador.unobserve(entrada.target);
-        }
-      });
-    },
-    { threshold: 0.25, rootMargin: "0px 0px -8% 0px" }
-  );
+  // La carta: primero el saludo y el primer párrafo; el resto va
+  // apareciendo de uno en uno a medida que la persona se desplaza.
+  let i = 0;
+  let esperando = false;
+  let yUltimo = window.scrollY;
 
-  elementos.forEach((el) => observador.observe(el));
+  function siguiente() {
+    if (i >= enCarta.length || esperando) return;
+    const el = enCarta[i];
+    const dentro = el.getBoundingClientRect().top < window.innerHeight * 0.62;
+    const desplazo = i < 2 || window.scrollY - yUltimo >= 50;
+    if (!dentro || !desplazo) return;
+
+    esperando = true;
+    el.classList.add("visible");
+    i++;
+    yUltimo = window.scrollY;
+    setTimeout(() => { esperando = false; siguiente(); }, reducirMovimiento ? 0 : 1100);
+  }
+
+  window.addEventListener("scroll", siguiente, { passive: true });
+  window.addEventListener("resize", siguiente);
+  siguiente();
 }
 
 /* ==========================================================
