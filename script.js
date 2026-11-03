@@ -262,6 +262,7 @@ function abrirSobre() {
       carta.hidden = false;
       document.querySelector(".latido-fondo").classList.add("activo");
       crearLuces();
+      $("escenita").hidden = false;
       window.scrollTo(0, 0);
       activarRevelado();
     }, esperaCarta);
