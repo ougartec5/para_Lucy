@@ -377,7 +377,7 @@ function puntoCorazon(theta, escala, ox, oy) {
 const TRAMOS = [0, 0.22, 0.44, 0.66, 0.88, 1];
 
 function persona(x, g, u, o) {
-  const c = cc, piel = "#f2c9a0", pelo = "#3a2418";
+  const c = cc, piel = "#f2c9a0", pelo = o.chica ? "#0d0a0c" : "#3a2418";
   c.save();
   c.fillStyle = "rgba(0,0,0,0.25)";
   c.beginPath(); c.ellipse(x, g, 2.4 * u, 0.5 * u, 0, 0, 6.283); c.fill();
@@ -397,11 +397,11 @@ function persona(x, g, u, o) {
   }
 
   // cuerpo
-  c.fillStyle = o.chica ? "#e07a98" : "#4f7fd1";
+  c.fillStyle = o.chica ? "#c0182d" : "#4f7fd1";
   c.beginPath();
   if (o.chica) {
     c.moveTo(-0.9 * u, -7.3 * u); c.lineTo(0.9 * u, -7.3 * u);
-    c.lineTo(2 * u, -3.4 * u); c.lineTo(-2 * u, -3.4 * u);
+    c.lineTo(2.3 * u, -1.8 * u); c.lineTo(-2.3 * u, -1.8 * u);
   } else {
     c.rect(-1.4 * u, -7.4 * u, 2.8 * u, 3.9 * u);
   }
@@ -420,11 +420,23 @@ function persona(x, g, u, o) {
   // cabeza y pelo
   const hy = -9.7 * u;
   c.fillStyle = pelo;
-  if (o.chica) { c.beginPath(); c.ellipse(-0.3 * u, hy + 1.2 * u, 2.7 * u, 3.2 * u, 0, 0, 6.283); c.fill(); }
+  if (o.chica) { c.beginPath(); c.arc(-0.5 * u, hy - 2.8 * u, 1.35 * u, 0, 6.283); c.fill(); }
   c.fillStyle = piel;
   c.beginPath(); c.arc(0, hy, 2.2 * u, 0, 6.283); c.fill();
   c.fillStyle = pelo;
   c.beginPath(); c.arc(0, hy, 2.35 * u, 3.14, 6.283); c.fill();
+
+  if (o.chica) {
+    c.strokeStyle = pelo; c.lineWidth = 0.6 * u;
+    for (const sx of [-1, 1]) {
+      c.beginPath();
+      c.moveTo(sx * 2.0 * u, hy + 0.2 * u);
+      c.bezierCurveTo(sx * 3.1 * u, hy + 1.8 * u, sx * 1.0 * u, hy + 2.7 * u, sx * 2.1 * u, hy + 4.1 * u);
+      c.stroke();
+    }
+    c.fillStyle = "#c0182d";
+    c.beginPath(); c.arc(-0.2 * u, hy + 2.6 * u, 0.15 * u, 0, 6.283); c.fill();
+  }
 
   // cara
   c.fillStyle = c.strokeStyle = "#2a1a14";
@@ -433,17 +445,23 @@ function persona(x, g, u, o) {
   for (const ex of [0.5 * u, 1.5 * u]) {
     c.beginPath();
     if (o.boca === 2) { c.arc(ex, ey + 0.1 * u, 0.3 * u, 3.14, 6.283); c.stroke(); }
+    else if (o.chica) {
+      c.fillStyle = "#14090d"; c.arc(ex, ey, 0.4 * u, 0, 6.283); c.fill();
+      c.fillStyle = "#fff"; c.beginPath(); c.arc(ex - 0.12 * u, ey - 0.12 * u, 0.13 * u, 0, 6.283); c.fill();
+      c.fillStyle = "#2a1a14";
+    }
     else { c.arc(ex, ey, 0.24 * u, 0, 6.283); c.fill(); }
   }
   c.fillStyle = "rgba(224,100,130,0.45)";
   c.beginPath(); c.arc(1.9 * u, hy + 1.2 * u, 0.4 * u, 0, 6.283); c.fill();
-  const my = hy + 1.3 * u;
+  const my = hy + 1.3 * u, labio = o.chica ? "#b3202e" : "#8a1630";
   if (o.boca === 2) {
-    c.fillStyle = "#8a1630"; c.beginPath(); c.arc(1.0 * u, my - 0.1 * u, 0.8 * u, 0, 3.14); c.fill();
+    c.fillStyle = labio; c.beginPath(); c.arc(1.0 * u, my - 0.1 * u, 0.8 * u, 0, 3.14); c.fill();
   } else if (o.boca === 1) {
-    c.fillStyle = "#8a1630"; c.beginPath();
-    c.ellipse(1.0 * u, my + 0.1 * u, 0.45 * u, (0.15 + 0.4 * (o.abre || 0)) * u, 0, 0, 6.283); c.fill();
+    c.fillStyle = labio; c.beginPath();
+    c.ellipse(1.0 * u, my + 0.1 * u, 0.4 * u, (0.12 + 0.28 * (o.abre || 0)) * u, 0, 0, 6.283); c.fill();
   } else {
+    c.strokeStyle = labio; c.lineWidth = (o.chica ? 0.45 : 0.28) * u;
     c.beginPath(); c.arc(1.0 * u, my - 0.2 * u, 0.55 * u, 0.2, 2.94); c.stroke();
   }
   c.restore();
