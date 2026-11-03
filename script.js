@@ -377,7 +377,7 @@ function puntoCorazon(theta, escala, ox, oy) {
 const TRAMOS = [0, 0.22, 0.44, 0.66, 0.88, 1];
 
 function persona(x, g, u, o) {
-  const c = cc, piel = "#f2c9a0", pelo = o.chica ? "#0d0a0c" : "#3a2418";
+  const c = cc, piel = "#f2c9a0", pelo = "#0d0a0c";
   c.save();
   c.fillStyle = "rgba(0,0,0,0.25)";
   c.beginPath(); c.ellipse(x, g, 2.4 * u, 0.5 * u, 0, 0, 6.283); c.fill();
@@ -397,15 +397,21 @@ function persona(x, g, u, o) {
   }
 
   // cuerpo
+  if (o.chica) { c.fillStyle = piel; c.fillRect(-1.3 * u, -7.6 * u, 2.6 * u, 1.7 * u); }
   c.fillStyle = o.chica ? "#c0182d" : "#4f7fd1";
   c.beginPath();
   if (o.chica) {
-    c.moveTo(-0.9 * u, -7.3 * u); c.lineTo(0.9 * u, -7.3 * u);
+    c.moveTo(-1.25 * u, -6.5 * u); c.lineTo(1.25 * u, -6.5 * u);
     c.lineTo(2.3 * u, -1.8 * u); c.lineTo(-2.3 * u, -1.8 * u);
   } else {
     c.rect(-1.4 * u, -7.4 * u, 2.8 * u, 3.9 * u);
   }
   c.closePath(); c.fill();
+
+  if (o.chica) {
+    c.strokeStyle = "#c0182d"; c.lineWidth = 0.22 * u;
+    for (const sx of [-0.95, 0.95]) { c.beginPath(); c.moveTo(sx * u, -7.6 * u); c.lineTo(sx * u, -6.5 * u); c.stroke(); }
+  }
 
   // brazos (ángulo desde "colgando": 0 abajo, 3.14 arriba)
   c.strokeStyle = piel;
@@ -425,6 +431,12 @@ function persona(x, g, u, o) {
   c.beginPath(); c.arc(0, hy, 2.2 * u, 0, 6.283); c.fill();
   c.fillStyle = pelo;
   c.beginPath(); c.arc(0, hy, 2.35 * u, 3.14, 6.283); c.fill();
+  if (!o.chica) {
+    c.save(); c.beginPath(); c.arc(0, hy, 2.3 * u, 0, 6.283); c.clip();
+    c.fillStyle = pelo; c.fillRect(-3 * u, hy + 1.15 * u, 6 * u, 3 * u);
+    c.fillStyle = piel; c.beginPath(); c.ellipse(1.0 * u, hy + 1.35 * u, 0.85 * u, 0.45 * u, 0, 0, 6.283); c.fill();
+    c.restore();
+  }
 
   if (o.chica) {
     c.strokeStyle = pelo; c.lineWidth = 0.6 * u;
@@ -628,9 +640,9 @@ function dibujarCielo(ahora) {
   const latido = completo && !reducirMovimiento
     ? 1 + 0.04 * Math.pow(Math.abs(Math.sin(ahora / 700)), 14)
     : 1;
-  const escala = Math.min((cw * 0.62) / 32, (ch * 0.36) / 29) * latido;
+  const escala = Math.min((cw * 0.62) / 32, (ch * 0.52) / 29) * latido;
   const ox = cw / 2;
-  const oy = ch * 0.47 - 2.5 * escala;
+  const oy = ch * 0.5 - 2.5 * escala;
 
   const N = 320;
   const puntos = [];
